@@ -1,0 +1,20 @@
+name: RecetasPersonalizadas
+version: '1.0.0'
+main: com.mixla.recetas.RecetasPlugin
+api-version: '26.1.2'
+description: Catálogo informativo de recetas editable mediante inventarios.
+author: MIXLA08
+commands:
+  recetas:
+    description: Abre el catálogo de recetas
+    permission: recetaspersonalizadas.ver
+    usage: /recetas
+  editrecetas:
+    description: Administra recetas; nombre <texto> completa una solicitud de nombre
+    permission: recetaspersonalizadas.admin
+    usage: /editrecetas [nombre <texto>|cancelar]
+permissions:
+  recetaspersonalizadas.ver:
+    default: true
+  recetaspersonalizadas.admin:
+    default: op
