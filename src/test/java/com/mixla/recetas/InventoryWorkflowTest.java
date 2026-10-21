@@ -169,4 +169,54 @@ class InventoryWorkflowTest {
         click(admin, 8, ClickType.LEFT); tick(); awaitSave();
         assertEquals(2, plugin.manager().all().getFirst().result().getAmount());
     }
+    @Test void selectsFromPaperInventoryWrapperWithoutMovingRealItems() {
+        createEditor("Envolturas Paper");
+        var original = admin.getInventory();
+        var wrapper = (org.bukkit.inventory.PlayerInventory) java.lang.reflect.Proxy.newProxyInstance(
+            org.bukkit.inventory.PlayerInventory.class.getClassLoader(),
+            new Class<?>[]{org.bukkit.inventory.PlayerInventory.class},
+            (proxy, method, args) -> method.invoke(original, args));
+        assertNotSame(original, wrapper);
+        for (int rawSlot : new int[]{27, 35, 53, 54, 62}) {
+            int personalSlot = admin.getOpenInventory().convertSlot(rawSlot);
+            ItemStack source = new ItemStack(Material.DIAMOND, personalSlot + 1);
+            original.setItem(personalSlot, source);
+            ItemStack[] before = original.getContents();
+            InventoryClickEvent event = new InventoryClickEvent(admin.getOpenInventory(), InventoryType.SlotType.CONTAINER,
+                rawSlot, ClickType.LEFT, InventoryAction.PICKUP_ALL) {
+                @Override public org.bukkit.inventory.Inventory getClickedInventory() { return wrapper; }
+            };
+            server.getPluginManager().callEvent(event);
+            assertTrue(event.isCancelled()); click(admin, 1, ClickType.LEFT); click(admin, 15, ClickType.LEFT);
+            assertEquals(source, menu(admin).inventory.getItem(1));
+            assertEquals(source, menu(admin).inventory.getItem(15));
+            assertArrayEquals(before, original.getContents()); assertTrue(admin.getItemOnCursor().getType().isAir());
+        }
+    }
+    @Test void backFromIncompleteRecipeReleasesSessionAndAllowsAnotherCreation() {
+        createEditor("Sin terminar"); Menu abandoned = menu(admin);
+        click(admin, 26, ClickType.LEFT); tick();
+        assertEquals(Menu.Kind.ADMIN, menu(admin).kind);
+        UUID other = UUID.randomUUID();
+        assertTrue(plugin.manager().acquire(abandoned.recipeId, other));
+        plugin.manager().release(abandoned.recipeId, other);
+        assertTrue(plugin.manager().all().isEmpty());
+        click(admin, 47, ClickType.LEFT); tick(); admin.performCommand("editrecetas nombre Sin terminar");
+        assertEquals(Menu.Kind.EDITOR, menu(admin).kind); assertNotEquals(abandoned.recipeId, menu(admin).recipeId);
+    }
+    @Test void manualInvalidSaveKeepsEditorButBackCanDiscard() {
+        createEditor("Guardar incompleta"); Menu editor = menu(admin);
+        click(admin, 8, ClickType.LEFT); tick(); assertSame(editor, menu(admin)); assertFalse(editor.finishing);
+        click(admin, 26, ClickType.LEFT); tick(); assertEquals(Menu.Kind.ADMIN, menu(admin).kind);
+        assertTrue(plugin.manager().all().isEmpty());
+    }
+    @Test void backFromInvalidExistingRecipeKeepsSavedVersionAndUnlocks() throws Exception {
+        seed("Existente"); Recipe original = plugin.manager().all().getFirst();
+        admin.performCommand("editrecetas"); click(admin, 0, ClickType.LEFT); tick();
+        click(admin, 15, ClickType.RIGHT); assertNull(menu(admin).inventory.getItem(15));
+        click(admin, 26, ClickType.LEFT); tick(); assertEquals(Menu.Kind.ADMIN, menu(admin).kind);
+        assertEquals(original.result(), plugin.manager().get(original.id()).result());
+        PlayerMock other = server.addPlayer(); other.setOp(true); other.performCommand("editrecetas");
+        click(other, 0, ClickType.LEFT); tick(); assertEquals(Menu.Kind.EDITOR, menu(other).kind);
+    }
 }

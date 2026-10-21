@@ -1,4 +1,4 @@
-# RecetasPersonalizadas 1.0.0
+# RecetasPersonalizadas 1.0.1
 
 Plugin informativo para **PaperMC 26.1.2 y Java 25**. Permite compartir recetas mediante inventarios de cofre, con creación y edición dentro del juego. **No registra recetas de crafteo** ni entrega sus resultados.
 
@@ -18,18 +18,25 @@ Windows:
 gradlew.bat clean build
 ```
 
-El JAR queda en **`build/libs/RecetasPersonalizadas-1.0.0.jar`**. Las pruebas se ejecutan como parte de `build`; el informe está en `build/reports/tests/test/index.html`.
+El JAR queda en **`build/libs/RecetasPersonalizadas-1.0.1.jar`**. Las pruebas se ejecutan como parte de `build`; el informe está en `build/reports/tests/test/index.html`.
 
 La dependencia solicitada es `io.papermc.paper:paper-api:26.1.2.build.+`, desde el repositorio oficial `https://repo.papermc.io/repository/maven-public/`. `gradle.lockfile` fija la resolución verificada a **26.1.2.build.74-stable** y todas las dependencias de pruebas. Para actualizar deliberadamente esa resolución: `./gradlew build --write-locks --refresh-dependencies`.
 
 En este entorno cloud se puede ejecutar `bash scripts/cloud-setup.sh`: instala Temurin 25 con checksum fijo si falta, configura Gradle para el proxy y los certificados del sistema y compila. Usa `/workspace/tools` y `/workspace/.gradle`; no contiene secretos. Los demás equipos no necesitan este script.
 
+## Cambios de la versión 1.0.1
+
+- Corrige la selección desde el inventario personal en Paper: ya no depende de que dos envolturas de inventario sean el mismo objeto Java.
+- Muestra el ítem seleccionado en el espacio 17 para explicar visualmente el flujo de copias.
+- Corrige **Volver al catálogo** cuando falta el resultado: descarta los cambios incompletos y libera la sesión, conservando la receta previamente guardada si existe.
+- Agrega pruebas de regresión para inventarios envueltos de Paper, hotbar, inventario principal y creación después de volver.
+
 ## Instalar
 
-El repositorio incluye el [JAR compilado de la versión 1.0.0](dist/RecetasPersonalizadas-1.0.0.jar) y su [SHA-256](dist/RecetasPersonalizadas-1.0.0.jar.sha256). Para regenerarlo, ejecutá la compilación indicada arriba.
+El repositorio incluye el [JAR compilado de la versión 1.0.1](dist/RecetasPersonalizadas-1.0.1.jar) y su [SHA-256](dist/RecetasPersonalizadas-1.0.1.jar.sha256). Para regenerarlo, ejecutá la compilación indicada arriba.
 
-1. Detené tu servidor Paper **26.1.2** que utiliza **Java 25**.
-2. Copiá `build/libs/RecetasPersonalizadas-1.0.0.jar` a la carpeta `plugins/`.
+1. Detené tu servidor Paper **26.1.2** que utiliza **Java 25**. Si actualizás desde 1.0.0, retirá el JAR anterior antes de copiar el nuevo; conservá la carpeta de datos `plugins/RecetasPersonalizadas/`.
+2. Copiá `build/libs/RecetasPersonalizadas-1.0.1.jar` a la carpeta `plugins/`.
 3. Iniciá el servidor. El plugin genera `plugins/RecetasPersonalizadas/config.yml` y el directorio `recipes/`.
 4. Abrí `/recetas`. Como operador, usá `/editrecetas` para crear contenido.
 
@@ -64,10 +71,10 @@ Los nueve ingredientes están entre corchetes en las tres primeras columnas de l
 
 1. `/editrecetas` → **Crear receta**.
 2. Escribí `/editrecetas nombre Espada especial`. El nombre debe ser único, ignorando mayúsculas, y tener de 1 a 64 caracteres.
-3. En el editor, hacé clic izquierdo o derecho en un ítem de tu inventario para **seleccionar una copia completa**, incluyendo su cantidad.
+3. En el editor, hacé clic izquierdo o derecho en un ítem de tu inventario para **seleccionar una copia completa**, incluyendo su cantidad. La copia seleccionada aparece como referencia en el espacio 17. Es normal que el ítem real no siga al cursor: permanece en tu inventario.
 4. Hacé clic izquierdo en cualquiera de los nueve espacios de ingredientes o en el resultado (15) para colocar esa copia. Se puede repetir en otros espacios. También se admite copiar un ítem real que ya esté en el cursor.
 5. Clic derecho sobre un espacio editable para vaciarlo. Los ingredientes son opcionales; el resultado debe ser un ítem válido.
-6. **Guardar y volver** (8) confirma el guardado en disco antes de volver al catálogo. **Volver** (26) hace lo mismo. Cerrar el inventario también guarda automáticamente si el resultado es válido.
+6. **Guardar y volver** (8) confirma el guardado en disco antes de volver al catálogo; si falta el resultado, permanece abierto para corregirlo. **Volver al catálogo** (26) guarda los cambios válidos; si falta el resultado, descarta esa edición, libera el bloqueo y permite crear otra receta. Cerrar el inventario también guarda automáticamente si el resultado es válido.
 
 El editor es de plantillas: no arrastra ni transfiere objetos reales. El inventario personal y el cursor no se modifican por los clics del plugin. Shift-click, números, mano secundaria, doble clic, arrastres, drops y clonados creativos quedan bloqueados mientras el menú está abierto. El cierre del inventario sigue el comportamiento normal de Minecraft para un objeto real que el jugador ya tuviera en el cursor.
 

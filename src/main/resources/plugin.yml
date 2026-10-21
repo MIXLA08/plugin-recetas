@@ -1,5 +1,5 @@
 name: RecetasPersonalizadas
-version: '1.0.0'
+version: '1.0.1'
 main: com.mixla.recetas.RecetasPlugin
 api-version: '26.1.2'
 description: Catálogo informativo de recetas editable mediante inventarios.

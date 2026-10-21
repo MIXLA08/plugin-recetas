@@ -64,9 +64,27 @@ public final class Menus {
         menu.inventory.setItem(6, button(Material.NAME_TAG, "Cambiar nombre"));
         menu.inventory.setItem(7, button(Material.BARRIER, "Eliminar receta"));
         menu.inventory.setItem(8, button(Material.LIME_DYE, "Guardar y volver"));
-        menu.inventory.setItem(17, button(Material.PAPER, "Editor de copias", "Clic en tu inventario: seleccionar copia", "Clic en espacio: colocar copia; derecho: borrar", "Cierre: guarda si hay resultado válido"));
-        menu.inventory.setItem(26, button(Material.ARROW, "Volver (guarda cambios válidos)"));
+        showSelection(menu, null);
+        menu.inventory.setItem(26, button(Material.ARROW, "Volver al catálogo", "Guarda si hay un resultado válido", "Si falta el resultado, descarta esta edición"));
         player.openInventory(menu.inventory);
+    }
+    static void showSelection(Menu menu, ItemStack selected) {
+        if (selected == null) {
+            menu.inventory.setItem(17, button(Material.PAPER, "Editor de copias",
+                "1. Clic en un ítem de tu inventario", "2. Clic en ingrediente o resultado",
+                "Derecho en un espacio: borrar", "Los objetos reales no se mueven"));
+            return;
+        }
+        ItemStack preview = selected.clone();
+        preview.editMeta(meta -> {
+            List<Component> lore = new ArrayList<>();
+            if (meta.lore() != null) lore.addAll(meta.lore());
+            lore.add(Component.text("Copia seleccionada: " + selected.getAmount() + " unidades", NamedTextColor.GREEN));
+            lore.add(Component.text("Clic izquierdo en ingrediente o resultado para colocar", NamedTextColor.YELLOW));
+            lore.add(Component.text("El ítem real permanece en tu inventario", NamedTextColor.GRAY));
+            meta.lore(lore);
+        });
+        menu.inventory.setItem(17, preview);
     }
     public void confirmDelete(Player player, Menu editor) {
         editor.finishing = true;

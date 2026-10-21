@@ -39,9 +39,10 @@ public final class MenuListener implements Listener {
         // No shift, números, doble clic, drop, offhand ni clic creativo de clonado.
         if (event.getClick() != ClickType.LEFT && event.getClick() != ClickType.RIGHT) return;
         int slot = event.getRawSlot();
-        if (menu.kind == Menu.Kind.EDITOR && slot >= menu.inventory.getSize() && event.getClickedInventory() == player.getInventory()) {
+        if (menu.kind == Menu.Kind.EDITOR && slot >= menu.inventory.getSize() && slot < menu.inventory.getSize() + 36) {
             ItemStack copy = Recipe.copy(player.getInventory().getItem(event.getSlot()));
             if (copy == null) brushes.remove(player.getUniqueId()); else brushes.put(player.getUniqueId(), copy);
+            Menus.showSelection(menu, copy);
             player.sendMessage(copy == null ? "Selección vacía: clic derecho borra un espacio." : "Copia seleccionada. Clic izquierdo en un espacio del editor para colocarla.");
             return;
         }
@@ -73,7 +74,8 @@ public final class MenuListener implements Listener {
                     if (!authorized(player, menu) || menu.finishing) return;
                     confirmations.put(player.getUniqueId(), menu); menus.confirmDelete(player, menu);
                 });
-                else if (slot == 8 || slot == 26) later(() -> finish(player, menu, true));
+                else if (slot == 8) later(() -> finish(player, menu, true));
+                else if (slot == 26) later(() -> back(player, menu));
             }
             case DELETE -> {
                 if (slot == 15) later(() -> restoreConfirmation(player, menu));
@@ -134,6 +136,19 @@ public final class MenuListener implements Listener {
         ItemStack[] ingredients = new ItemStack[9];
         for (int i = 0; i < 9; i++) ingredients[i] = menu.inventory.getItem(RecipeLayout.INGREDIENTS[i]);
         return new Recipe(menu.recipeId, menu.name, ingredients, menu.inventory.getItem(RecipeLayout.RESULT));
+    }
+    private void back(Player player, Menu menu) {
+        if (menu(player) != menu || menu.finishing) return;
+        if (!authorized(player, menu)) { player.closeInventory(); return; }
+        try { snapshot(menu); }
+        catch (IllegalArgumentException ex) {
+            menu.finishing = true;
+            manager.release(menu.recipeId, player.getUniqueId());
+            player.sendMessage("Edición incompleta descartada: falta un resultado válido. La versión guardada se conserva.");
+            menus.catalog(player, true, menu.page);
+            return;
+        }
+        finish(player, menu, true);
     }
     private void finish(Player player, Menu menu, boolean returnToCatalog) {
         if (menu.finishing) return;
